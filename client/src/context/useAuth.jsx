@@ -15,13 +15,9 @@ export const AuthProvider = (({ children }) => {
         delete axios.defaults.headers.common['Authorization'];
         localStorage.removeItem('user');
     }
-    const getToken = () => {
-        let user = JSON.parse(localStorage.getItem('user'));
-        return user !== null ? user.token : '';
-    }
 
     return (
-        <AuthContext.Provider value={{ authentication, guest, Logout, getToken }}>
+        <AuthContext.Provider value={{ authentication, guest, Logout }}>
             {children}
         </AuthContext.Provider>
     );
@@ -29,4 +25,8 @@ export const AuthProvider = (({ children }) => {
 
 export const useAuth = () => {
     return useContext(AuthContext);
+}
+export const getToken = () => {
+    let user = JSON.parse(localStorage.getItem('user'));
+    return user !== null ? user.token : '';
 }

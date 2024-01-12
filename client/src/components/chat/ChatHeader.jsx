@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router'
 import Avatar from '../Avatar'
 import { useAuth } from '../../context/useAuth'
 import { Row, DropdownItem, DropdownMenu, DropdownToggle, Nav, UncontrolledDropdown } from 'reactstrap';
+import moment from 'moment';
 
 function ChatHeader({ contact }) {
     const navigate = useNavigate();
@@ -13,12 +14,19 @@ function ChatHeader({ contact }) {
     }
 
 
+    const status = () => {
+        if (contact.status === true) return "online";
+        if (contact.status) return moment(contact.status).fromNow();
+    }
+
+
 
     return (
         <Row className="heading m-0">
             <Avatar src={''} />
             <div className="text-right">
                 <div>{contact ? contact.name : ''}</div>
+                <small>{status()}</small>
             </div>
             <Nav className="mr-auto" navbar>
                 <UncontrolledDropdown>

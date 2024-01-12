@@ -4,13 +4,25 @@ import { useEffect, useState } from "react";
 import { Row, Spinner } from 'reactstrap';
 import { ContactHeader, Contacts, ChatHeader, Messages, MessageForm } from "../components";
 import socketIO from 'socket.io-client';
+import { getToken } from "../context/useAuth";
+let socket = socketIO(process.env.REACT_APP_SOCKET, {
+    query: 'token=' + getToken()
+});
 
 
 function Chat() {
     const navigate = useNavigate();
-    const { guest, getToken, Logout } = useAuth();
+    const { guest, Logout } = useAuth();
     const [redirected, setRedirected] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [st, setSt] = useState({
+        messages: [],
+        contacts: [],
+        user: '',
+        contact: {},
+    });
+
+    const [connected, setConnected] = useState(false);
 
     useEffect(() => {
         if (guest()) {
@@ -22,17 +34,11 @@ function Chat() {
         }
     }, [navigate, guest, redirected]);
 
-
-    const [st, setSt] = useState({
-        messages: [],
-        contacts: [],
-        user: '',
-        contact: null,
-    });
-
-    const [connected, setConnected] = useState(false);
-    const [socket, setSocket] = useState();
-
+    useEffect(() => {
+        socket.on('new_user', onNewUser);
+        socket.on('message', onNewMessage);
+        socket.on('user_status', updateUsersState);
+    }, [st])
 
     const onNewUser = (user) => {
         let contacts2 = st.contacts.concat(user);
@@ -47,6 +53,7 @@ function Chat() {
 
     const sendMessage = (message) => {
         if (!st.contact.id) return;
+        message.sender = st.user.id;
         message.receiver = st.contact.id;
         let messages = st.messages.concat(message);
         setSt({ ...st, messages: messages });
@@ -55,17 +62,14 @@ function Chat() {
 
 
     const initSocketConnection = () => {
-        let socket = socketIO(process.env.REACT_APP_SOCKET, {
-            query: 'token=' + getToken()
-        });
+
         socket.on('connect', () => setConnected(true));
         socket.on('disconnect', () => setConnected(false));
-        socket.on('data', (user, contacts, messages) => {
+        socket.on('data', (user, contacts, messages, users) => {
             let contact = contacts[0] || {}
-            setSt({ messages: messages, contacts: contacts, user: user, contact: contact });
+            setSt({ messages: messages, contacts: contacts, user: user, contact: contact }, () => updateUsersState(users));
         })
-        socket.on('new_user', onNewUser);
-        socket.on('message', onNewMessage);
+
 
         socket.on('error', err => {
             if (err === 'auth_error') {
@@ -73,9 +77,18 @@ function Chat() {
                 navigate('/login');
             }
         });
-        setSocket(socket);
     }
 
+
+    const updateUsersState = users => {
+        let contacts = st.contacts;
+        contacts.forEach((element, index) => {
+            if (users[element.id]) contacts[index].status = users[element.id];
+        });
+        let contact = st.contact;
+        if (users[contact.id]) contact.status = users[contact.id];
+        setSt({ ...st, contacts: contacts, contact: contact });
+    }
 
 
     const handleChatNavigate = (contact) => {
@@ -85,7 +98,7 @@ function Chat() {
     const renderChat = () => {
         const { contact, user } = st;
         if (!contact) return;
-        let messages = st.messages.filter(e => e.sender === contact.id || e.reciver === contact.id);
+        let messages = st.messages.filter(e => e.sender === contact.id || e.receiver === contact.id);
         return <Messages user={user} messages={messages} />
     }
 

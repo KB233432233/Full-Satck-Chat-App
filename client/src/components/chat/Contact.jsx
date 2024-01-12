@@ -9,6 +9,7 @@ function Contact({ contact, message }) {
         <div className="contact">
             <div>
                 <Avatar src={contact.avatar} />
+                {contact.status === true ? <i className="fa fa-circle online" /> : ''}
             </div>
             <div className="w-50">
                 <div className="name">{contact.name}</div>
