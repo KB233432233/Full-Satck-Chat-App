@@ -59,17 +59,11 @@ function Chat() {
     }
 
     const onTypingMessage = sender => {
-        if (st.contact.id !== sender) {
-            setSt({ ...st, typing: sender });
-            clearTimeout(st.timeout);
-            const timeout = setTimeout(typingTimout, 3000);
-            setSt({ ...st, timeout });
-        }
+        if (st.contact.id !== sender) return;
+        setSt({ ...st, typing: true });
+        setTimeout(() => setSt({ ...st, typing: false }), 3000);
     }
 
-    const typingTimout = () => {
-        setSt({ ...st, typing: false });
-    }
 
     const sendMessage = (message) => {
         if (!st.contact.id) return;
