@@ -27,6 +27,7 @@ app.use(cors());
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/api/auth', authRoute);
+app.use('/api/account', require('./routes/account'));
 
 //errors
 

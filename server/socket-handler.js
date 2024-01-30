@@ -11,6 +11,7 @@ io.on('connection', socket => {
     onSocketConnected(socket);
     socket.on('message', data => onMessage(socket, data));
     socket.on('typing', receiver => onTyping(socket, receiver));
+    socket.on('seen', sender => onSeen(socket, sender));
     socket.on('disconnect', () => onSocketDisConnected(socket));
 })
 
@@ -50,14 +51,19 @@ const onMessage = (socket, data) => {
         sender: sender, receiver: receiver, content: data.content, date: new Date().getTime()
     };
     Message.create(message);
-    socket.to(receiver).to(sender).emit('message', message);
+    io.to(receiver).emit('message', message);
 
 }
 
 
 const onTyping = async (socket, receiver) => {
     let sender = socket.user.id;
-    socket.to(receiver).emit('typing', sender);
+    io.to(receiver).emit('typing', sender);
+}
+
+const onSeen = async (socket, sender) => {
+    let receiver = socket.user.id;
+    await Message.updateMany({ sender, receiver, seen: false }, { seen: true }, { multi: true });
 }
 
 

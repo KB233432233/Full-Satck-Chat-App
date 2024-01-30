@@ -16,8 +16,14 @@ export const AuthProvider = (({ children }) => {
         localStorage.removeItem('user');
     }
 
+    const setUser = newProfile => {
+        let user = JSON.parse(localStorage.getItem('user'));
+        newProfile.token = user;
+        localStorage.setItem('user', JSON.stringify(newProfile));
+    }
+
     return (
-        <AuthContext.Provider value={{ authentication, guest, Logout }}>
+        <AuthContext.Provider value={{ authentication, guest, Logout, setUser }}>
             {children}
         </AuthContext.Provider>
     );

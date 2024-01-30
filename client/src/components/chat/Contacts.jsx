@@ -16,9 +16,11 @@ function Contacts({ contacts, messages, handleChatNavigate }) {
         let messages2 = messages.filter(e => e.sender === contact.id || e.receiver === contact.id);
         let lastMessage = messages2[messages2.length - 1];
 
+        let unseen = messages2.filter(e => !e.seen && e.sender === contact.id).length;
+
         return (
             <div className="w-100" key={index} onClick={() => handleChatNavigate(contact)}>
-                <Contact contact={contact} message={lastMessage} />
+                <Contact contact={contact} message={lastMessage} unseen={unseen} />
             </div>
         );
     }

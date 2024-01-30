@@ -18,4 +18,20 @@ const authentication = async (socket, next) => {
     }).catch(next)
 }
 
-module.exports = authentication
+
+
+const authenticated = async (req, res, next) => {
+    let token = req.headers['authorization'];
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) return next(createError(401));
+        User.findById(decoded.id).then(user => {
+            if (!user) throw createError(401);
+            req.user = user;
+            next();
+        }).catch(next);
+    });
+};
+
+
+module.exports = { authentication, authenticated };
+

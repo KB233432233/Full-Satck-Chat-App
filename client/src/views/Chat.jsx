@@ -2,7 +2,7 @@ import { useNavigate } from "react-router"
 import { useAuth } from "../context/useAuth";
 import { useEffect, useState } from "react";
 import { Row, Spinner } from 'reactstrap';
-import { ContactHeader, Contacts, ChatHeader, Messages, MessageForm } from "../components";
+import { ContactHeader, Contacts, ChatHeader, Messages, MessageForm, UserProfile, EditProfile } from "../components";
 import socketIO from 'socket.io-client';
 import { getToken } from "../context/useAuth";
 
@@ -14,7 +14,7 @@ let socket = socketIO(process.env.REACT_APP_SOCKET, {
 
 function Chat() {
     const navigate = useNavigate();
-    const { guest, Logout } = useAuth();
+    const { guest, Logout, setUser } = useAuth();
     const [redirected, setRedirected] = useState(false);
     const [loading, setLoading] = useState(true);
     const [st, setSt] = useState({
@@ -22,10 +22,12 @@ function Chat() {
         contacts: [],
         user: {},
         contact: {},
-        typing: {},
         timeout: {},
     });
 
+    const [typing, setTyping] = useState(false);
+    const [userProfile, setUserProfile] = useState(false);
+    const [profile, setProfile] = useState(false);
     const [connected, setConnected] = useState(false);
 
     useEffect(() => {
@@ -40,6 +42,7 @@ function Chat() {
 
     useEffect(() => {
         socket.on('new_user', onNewUser);
+        socket.on('update_user', onUpdateUser)
         socket.on('message', onNewMessage);
         socket.on('user_status', updateUsersState);
         socket.on('typing', onTypingMessage);
@@ -50,18 +53,37 @@ function Chat() {
         setSt({ ...st, contacts: contacts2 });
     }
 
+    const onUpdateUser = (user) => {
+        if (st.user.id === user.id) {
+            setSt({ ...st, user });
+            setUser(user);
+            return;
+        }
+        let contacts = st.contacts;
+        contacts.forEach((ele, index) => {
+            if (ele.id === user.id) {
+                contacts[index] = user;
+                contacts[index].status = ele.status;
+            }
+        });
+        setSt({ ...st, contacts });
+        if (st.contact.id === user.id) setSt({ ...st, contact: user });
+    }
+
     const onNewMessage = (message) => {
         if (message.sender === st.contact.id) {
-            setSt({ ...st, typing: false });
+            setTyping(false);
+            socket.emit('seen', st.contact.id);
+            // message.seen = true;
         }
         let messages = st.messages.concat(message);
         setSt({ ...st, messages: messages });
     }
 
     const onTypingMessage = sender => {
-        if (st.contact.id !== sender) return;
-        setSt({ ...st, typing: true });
-        setTimeout(() => setSt({ ...st, typing: false }), 3000);
+        if (st.contact.id !== sender) { setTyping(false); return; }
+        setTyping(true);
+        setTimeout(() => setTyping(false), 3000);
     }
 
 
@@ -110,8 +132,19 @@ function Chat() {
 
 
     const handleChatNavigate = (contact) => {
-        setSt({ ...st, contact: contact })
+        socket.emit('seen', contact.id);
+        let message = st.messages;
+        message.forEach((ele) => {
+            if (ele.sender === contact.id) ele.seen = true;
+        })
+        setSt({ ...st, messages: message, contact });
     }
+
+    const userProfileToggle = () => {
+        setUserProfile(!userProfile);
+    };
+
+    const profileToggle = () => setProfile(!profile);
 
     const renderChat = () => {
         const { contact, user } = st;
@@ -124,11 +157,19 @@ function Chat() {
     return loading || !connected || !st.contacts || !st.messages ? <Spinner id="loader" color="success" /> : (
         <Row className='h-100'>
             <div id="contacts-section" className="col-6 col-md-4">
-                <ContactHeader />
+                <ContactHeader user={st.user} toggle={profileToggle} />
                 <Contacts contacts={st.contacts} messages={st.messages} handleChatNavigate={handleChatNavigate} />
+                <UserProfile
+                    contact={st.contact}
+                    toggle={userProfileToggle}
+                    open={userProfile} />
+                <EditProfile
+                    user={st.user}
+                    toggle={userProfileToggle}
+                    open={userProfile} />
             </div>
             <div id="messages-section" className="col-6 col-md-8">
-                <ChatHeader contact={st.contact} typing={st.typing} />
+                <ChatHeader contact={st.contact} typing={typing} toggle={userProfileToggle} />
                 {renderChat()}
                 <MessageForm sender={sendMessage} sendType={sendType} />
             </div>

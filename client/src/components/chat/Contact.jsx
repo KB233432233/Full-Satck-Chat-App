@@ -1,8 +1,9 @@
 import Avatar from "../Avatar"
 import moment from 'moment';
+import { Badge } from 'reactstrap';
 
 
-function Contact({ contact, message }) {
+function Contact({ contact, message, unseen }) {
 
 
     return (
@@ -20,6 +21,7 @@ function Contact({ contact, message }) {
                 <div className="small text-muted">
                     {message ? moment(message.date).format('hh:mm a') : ''}
                 </div>
+                {unseen > 0 ? <Badge color="success">{unseen}</Badge> : ''}
             </div>
         </div>
     )

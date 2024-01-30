@@ -4,7 +4,7 @@ import { useAuth } from '../../context/useAuth'
 import { Row, DropdownItem, DropdownMenu, DropdownToggle, Nav, UncontrolledDropdown } from 'reactstrap';
 import moment from 'moment';
 
-function ChatHeader({ contact, typing }) {
+function ChatHeader({ contact, typing, toggle }) {
     const navigate = useNavigate();
     const { Logout } = useAuth()
 
@@ -24,7 +24,9 @@ function ChatHeader({ contact, typing }) {
 
     return (
         <Row className="heading m-0">
-            <Avatar src={''} />
+            <div onClick={toggle}>
+                <Avatar src={''} />
+            </div>
             <div className="text-right">
                 <div>{contact ? contact.name : ''}</div>
                 <small>{status()}</small>
